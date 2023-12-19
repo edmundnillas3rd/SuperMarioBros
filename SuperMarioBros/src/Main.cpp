@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SDL.h>
+#include <SDL_image.h>
 
 #include "Game.h"
 
@@ -8,6 +9,12 @@ static void Run()
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
 		std::cout << "Failed to initialized SDL\n";
+	}
+
+	int imgInitFlags = IMG_INIT_JPG | IMG_INIT_JPG;
+	if (IMG_Init(imgInitFlags) == 0)
+	{
+		std::cout << "Failed to initialized image library\n";
 	}
 
 	const uint32_t SCREEN_WIDTH = 1366;
@@ -49,6 +56,7 @@ static void Run()
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 
+	IMG_Quit();
 	SDL_Quit();
 }
 
