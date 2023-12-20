@@ -5,12 +5,15 @@
 #include <fstream>
 #include <sstream>
 
+#include "Application.h"
 #include "Texture.h"
 
 enum class TileType
 {
-	NONE = 0,
-	BRICK_BASE = 1
+	BRICK_BASE			= 0,
+	BRICK_SOLID_SHINE	= 1,
+	BRICK_SOLID			= 2,
+	BRICK_HARD_SOLID	= 3
 };
 
 struct Tile
@@ -29,8 +32,11 @@ static std::string tilemap;
 static uint32_t xTilemapOffset = 0;
 static uint32_t yTilemapOffset = 0;
 
+// Camera
+SDL_Rect camera;
+
 // Animation Clips
-static const uint32_t SPRITE_SIZE = 16;
+static uint32_t SPRITE_SIZE = 16;
 static SDL_Rect marioRunningClip[4];
 
 // Animation frames
@@ -89,11 +95,20 @@ void StartGame(GameState& state)
 		marioRunningClip[i].w = SPRITE_SIZE;
 		marioRunningClip[i].h = SPRITE_SIZE;
 	}
+	
+	// Mario should be placed right above the level
+	// mario.y = 382 - SPRITE_SIZE;
+	mario.y = 750 - SPRITE_SIZE;
 
+	// Camera
+	int w, h;
+	SDL_GetWindowSize(reinterpret_cast<SDL_Window*>(Window()), &w, &h);
+	camera = { 0, 0, w, h };
 }
 
 void UpdateGame(GameState& state)
 {
+	SPRITE_SIZE = 16 * GetApplicationProps().Zoom;
 	Texture atlas = state.Instance->sprites["supermario_atlas"];
 
 	xTilemapOffset = 0;
@@ -120,13 +135,21 @@ void UpdateGame(GameState& state)
 			float x = SPRITE_SIZE * xTilemapOffset;
 			float y = SPRITE_SIZE * yTilemapOffset;
 			xTilemapOffset++;
-			RenderTextureClip(x, y, atlas, &tileClips[0]);
+			RenderTextureClip(x - camera.x, y - camera.y, atlas, &tileClips[(int)TileType::BRICK_BASE]);
 		}
 	}
 
 	// Mario
 	const Uint8* input = SDL_GetKeyboardState(nullptr);
 	static bool isMoving;
+
+
+	int w, h;
+	SDL_GetWindowSize(reinterpret_cast<SDL_Window*>(Window()), &w, &h);
+	// SDL_GetRendererOutputSize(reinterpret_cast<SDL_Renderer*>(Renderer()), &w, &h);
+
+	camera.x = mario.x - w / 2;
+	camera.y = mario.y - h / 2;
 
 	if (input[SDL_SCANCODE_A])
 	{
@@ -143,11 +166,9 @@ void UpdateGame(GameState& state)
 		isMoving = false;
 	}
 
-	mario.y = (720.0f / 2.0f) + atlas.Height - 8;
-
 	if (isMoving)
 	{
-		RenderTextureClip(mario.x, mario.y, atlas, &marioRunningClip[(frame + 1) / 3]);
+		RenderTextureClip(mario.x - camera.x, mario.y - camera.y, atlas, &marioRunningClip[(frame + 1) / 3]);
 		++frame;
 
 		if (frame / 3 >= MAX_FRAME)
@@ -157,7 +178,7 @@ void UpdateGame(GameState& state)
 	}
 	else
 	{
-		RenderTextureClip(mario.x, mario.y, atlas, &marioRunningClip[0]);
+		RenderTextureClip(mario.x - camera.x, mario.y - camera.y, atlas, &marioRunningClip[0]);
 	}
 }
 

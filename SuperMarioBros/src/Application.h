@@ -5,11 +5,15 @@
 
 struct Application
 {
-	SDL_Window* window;
-	SDL_Renderer* renderer;
+	Application() : Zoom(2.0f) {}
+	SDL_Window* Window;
+	SDL_Renderer* Renderer;
+
+	float Zoom;
 };
 
 void Run();
 
 void* Renderer();
 void* Window();
+Application GetApplicationProps();

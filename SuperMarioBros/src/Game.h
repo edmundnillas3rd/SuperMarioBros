@@ -17,7 +17,6 @@ struct GameState
 
 	uint32_t Width;
 	uint32_t Height;
-	uint32_t Zoom;
 
 	std::unordered_map<std::string, Texture> sprites;
 };

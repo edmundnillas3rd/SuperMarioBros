@@ -20,10 +20,10 @@ void Run()
 
 	const uint32_t SCREEN_WIDTH = 1366;
 	const uint32_t SCREEN_HEIGHT = 720;
-	app.window = SDL_CreateWindow("Super Mario Bros.", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_MAXIMIZED);
-	app.renderer = SDL_CreateRenderer(app.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	app.Window = SDL_CreateWindow("Super Mario Bros.", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_MAXIMIZED);
+	app.Renderer = SDL_CreateRenderer(app.Window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-	if (app.window && app.renderer)
+	if (app.Window && app.Renderer)
 	{
 		std::cout << "Window and Renderer successfully created\n";
 	}
@@ -44,21 +44,38 @@ void Run()
 			case SDL_QUIT:
 				running = false;
 				break;
+			case SDL_KEYDOWN:
+#ifdef _DEBUG
+				float stepValue = 1.0f;
+				switch (event.key.keysym.sym)
+				{
+				case SDLK_UP:
+					app.Zoom += stepValue;
+					break;
+				case SDLK_DOWN:
+					app.Zoom -= stepValue;
+					break;
+				}
+#endif
+				// std::cout << app.Zoom << "\n";
+				// SDL_RenderSetScale(app.Renderer, app.Zoom, app.Zoom);
+				break;
 			}
+
 		}
 
 		if (!running) break;
 
-		SDL_RenderClear(app.renderer);
-		SDL_SetRenderDrawColor(app.renderer, 0x22, 0x44, 0x43, 0xFF);
+		SDL_RenderClear(app.Renderer);
+		SDL_SetRenderDrawColor(app.Renderer, 0x22, 0x44, 0x43, 0xFF);
 		UpdateGame(state);
-		SDL_RenderPresent(app.renderer);
+		SDL_RenderPresent(app.Renderer);
 	}
 
 	ShutdownGame();
 
-	SDL_DestroyRenderer(app.renderer);
-	SDL_DestroyWindow(app.window);
+	SDL_DestroyRenderer(app.Renderer);
+	SDL_DestroyWindow(app.Window);
 
 	IMG_Quit();
 	SDL_Quit();
@@ -66,10 +83,15 @@ void Run()
 
 void* Renderer()
 {
-	return app.renderer;
+	return app.Renderer;
 }
 
 void* Window()
 {
-	return app.window;
+	return app.Window;
+}
+
+Application GetApplicationProps()
+{
+	return app;
 }
