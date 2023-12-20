@@ -21,3 +21,4 @@ struct Texture
 };
 
 Texture LoadTexture(const std::string& path);
+void RenderTextureClip(Texture texture, SDL_Rect* clip = nullptr);

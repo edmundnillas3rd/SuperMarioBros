@@ -5,6 +5,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
+#include "Application.h"
 
 Texture LoadTexture(const std::string& path)
 {
@@ -26,7 +27,9 @@ Texture LoadTexture(const std::string& path)
 		return tex;
 	}
 
-	SDL_Texture* texture = SDL_CreateTextureFromSurface(0, loadedSurface);
+	SDL_SetColorKey(loadedSurface, SDL_TRUE, SDL_MapRGB(loadedSurface->format, 0x92, 0x90, 0xFF));
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(reinterpret_cast<SDL_Renderer*>(Renderer()), loadedSurface);
+	SDL_FreeSurface(loadedSurface);
 
 	if (!texture)
 	{
@@ -42,4 +45,15 @@ Texture LoadTexture(const std::string& path)
 	tex.y = 0;
 
 	return tex;
+}
+
+void RenderTextureClip(Texture texture, SDL_Rect* clip)
+{
+	SDL_FRect renderQuad = { texture.x, texture.y, texture.Width, texture.Height };
+	if (clip)
+	{
+		renderQuad.w = clip->w;
+		renderQuad.h = clip->h;
+	}
+	SDL_RenderCopyF(reinterpret_cast<SDL_Renderer*>(Renderer()), texture.data, clip, &renderQuad);
 }
