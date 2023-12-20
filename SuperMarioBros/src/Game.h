@@ -22,5 +22,6 @@ struct GameState
 	std::unordered_map<std::string, Texture> sprites;
 };
 
-void GameStart(GameState& state);
-void GameShutdown();
+void StartGame(GameState& state);
+void UpdateGame(GameState& state);
+void ShutdownGame();

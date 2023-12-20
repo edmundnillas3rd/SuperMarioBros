@@ -49,11 +49,11 @@ Texture LoadTexture(const std::string& path)
 
 void RenderTextureClip(Texture texture, SDL_Rect* clip)
 {
-	SDL_FRect renderQuad = { texture.x, texture.y, texture.Width, texture.Height };
+	SDL_FRect renderQuad = { texture.x, texture.y, texture.Width * 2, texture.Height * 2 };
 	if (clip)
 	{
-		renderQuad.w = clip->w;
-		renderQuad.h = clip->h;
+		renderQuad.w = clip->w * 2;
+		renderQuad.h = clip->h * 2;
 	}
 	SDL_RenderCopyF(reinterpret_cast<SDL_Renderer*>(Renderer()), texture.data, clip, &renderQuad);
 }

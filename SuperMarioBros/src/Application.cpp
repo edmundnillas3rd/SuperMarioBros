@@ -21,7 +21,7 @@ void Run()
 	const uint32_t SCREEN_WIDTH = 1366;
 	const uint32_t SCREEN_HEIGHT = 720;
 	app.window = SDL_CreateWindow("Super Mario Bros.", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_MAXIMIZED);
-	app.renderer = SDL_CreateRenderer(app.window, -1, SDL_RENDERER_ACCELERATED);
+	app.renderer = SDL_CreateRenderer(app.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
 	if (app.window && app.renderer)
 	{
@@ -33,7 +33,7 @@ void Run()
 
 	GameState state;
 
-	GameStart(state);
+	StartGame(state);
 
 	while (running)
 	{
@@ -49,12 +49,13 @@ void Run()
 
 		if (!running) break;
 
-		SDL_RenderPresent(app.renderer);
-		SDL_SetRenderDrawColor(app.renderer, 0x22, 0x44, 0x43, 0xFF);
 		SDL_RenderClear(app.renderer);
+		SDL_SetRenderDrawColor(app.renderer, 0x22, 0x44, 0x43, 0xFF);
+		UpdateGame(state);
+		SDL_RenderPresent(app.renderer);
 	}
 
-	GameShutdown();
+	ShutdownGame();
 
 	SDL_DestroyRenderer(app.renderer);
 	SDL_DestroyWindow(app.window);
