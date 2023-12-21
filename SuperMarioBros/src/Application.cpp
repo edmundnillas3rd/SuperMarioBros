@@ -45,6 +45,7 @@ void Run()
 				running = false;
 				break;
 			case SDL_KEYDOWN:
+				// Should replace this macro
 #ifdef _DEBUG
 				float stepValue = 1.0f;
 				switch (event.key.keysym.sym)
