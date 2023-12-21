@@ -4,44 +4,32 @@
 #include <memory>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 #include "Application.h"
 #include "Texture.h"
+#include "Tilemap.h"
 
 enum class TileType
 {
-	BRICK_BASE			= 0,
-	BRICK_SOLID_SHINE	= 1,
-	BRICK_SOLID			= 2,
-	BRICK_HARD_SOLID	= 3
+	NONE				= -1,
+	BRICK_BASE			=  0,
+	BRICK_SOLID_SHINE	=  1,
+	BRICK_SOLID			=  2,
+	BRICK_HARD_SOLID	=  3
 };
 
-struct Tile
-{
-	uint32_t x;
-	uint32_t y;
-	uint32_t Width;
-	uint32_t Height;
-	TileType Type;
-};
+static const uint32_t SPRITE_SIZE = 16;
+static SDL_Rect camera;
 
 // Tile
-static SDL_Rect tileClips[4];
+static std::vector<SDL_Rect> tileClips;
+
 static std::fstream tilemapData;
 static std::string tilemap;
+
 static uint32_t xTilemapOffset = 0;
 static uint32_t yTilemapOffset = 0;
-
-// Camera
-SDL_Rect camera;
-
-// Animation Clips
-static uint32_t SPRITE_SIZE = 16;
-static SDL_Rect marioRunningClip[4];
-
-// Animation frames
-static const int MAX_FRAME = 3;
-static int frame = 0;
 
 struct Mario
 {
@@ -52,6 +40,10 @@ struct Mario
 static const uint32_t SPEED = 200;
 static Mario mario;
 
+static std::vector<SDL_Rect> marioRunningClips;
+static const int MAX_FRAME = 3;
+static int frame = 0;
+
 void StartGame(GameState& state)
 {
 	if (!state.Instance)
@@ -61,84 +53,69 @@ void StartGame(GameState& state)
 	}
 
 	state.Instance->sprites["supermario_atlas"] = LoadTexture("assets/images/SuperMarioBrosAtlas.png");
-	tilemapData.open("assets/maps/level-1-1.txt", std::ios::in | std::ios::binary);
-
-	if (!tilemapData.is_open())
-	{
-		std::cout << "Unable to open file\n";
-		return;
-	}
-
-	std::string tilemapLine;
-	while (std::getline(tilemapData, tilemapLine))
-	{
-		tilemap.append(tilemapLine);
-	}
-
-	tilemapData.close();
 
 	// Tiles
 	for (int i = 0; i < 4; i++)
 	{
 		const int TILE_SPRITE_OFFSET = (i + 14);
-		tileClips[i].x = SPRITE_SIZE * TILE_SPRITE_OFFSET;
-		tileClips[i].y = 0;
-		tileClips[i].w = SPRITE_SIZE;
-		tileClips[i].h = SPRITE_SIZE;
+		SDL_Rect tileClip = { 0 };
+		tileClip.x = SPRITE_SIZE * TILE_SPRITE_OFFSET;
+		tileClip.y = 0;
+		tileClip.w = SPRITE_SIZE;
+		tileClip.h = SPRITE_SIZE;
+		tileClips.push_back(tileClip);
 	}
 
 	// Mario
 	for (int i = 0; i < 4; i++)
 	{
 		const int MARIO_SPRITE_OFFSET = (i);
-		marioRunningClip[i].x = SPRITE_SIZE * MARIO_SPRITE_OFFSET;
-		marioRunningClip[i].y = 0;
-		marioRunningClip[i].w = SPRITE_SIZE;
-		marioRunningClip[i].h = SPRITE_SIZE;
+		SDL_Rect marioClip = { 0 };
+		marioClip.x = SPRITE_SIZE * MARIO_SPRITE_OFFSET;
+		marioClip.y = 0;
+		marioClip.w = SPRITE_SIZE;
+		marioClip.h = SPRITE_SIZE;
+		marioRunningClips.push_back(marioClip);
 	}
 	
 	// Mario should be placed right above the level
 	// mario.y = 382 - SPRITE_SIZE;
 	mario.y = 750 - SPRITE_SIZE;
 
-	// Camera
 	int w, h;
 	SDL_GetWindowSize(reinterpret_cast<SDL_Window*>(Window()), &w, &h);
 	camera = { 0, 0, w, h };
+
+	// Should resize the sprite after loading the clip textures
+	uint32_t RESIZE_SPRITE_SIZE = 16 * GetApplicationProps().Zoom;
+
+	Tile tileProps = {
+		0, 0, RESIZE_SPRITE_SIZE, RESIZE_SPRITE_SIZE
+	};
+
+	LoadTilemap("Level-1-1", "assets/maps/level-1-1.txt", tileProps, [](char tile) -> int {
+		TileType type = TileType::NONE;
+
+		switch (tile)
+		{
+		case '#':
+			type = TileType::BRICK_BASE;
+			break;
+		}
+
+		return (int)type;
+	});
 }
 
 void UpdateGame(GameState& state)
 {
-	SPRITE_SIZE = 16 * GetApplicationProps().Zoom;
 	Texture atlas = state.Instance->sprites["supermario_atlas"];
 
 	xTilemapOffset = 0;
 	yTilemapOffset = 0;
 
 	// Level
-	for (size_t i = 0; i < tilemap.size(); i++)
-	{
-		if (tilemap[i] == ' ')
-		{
-			xTilemapOffset++;
-			continue;
-		}
-
-		if (tilemap[i] == '\r' || tilemap[i] == '\n')
-		{
-			xTilemapOffset = 0;
-			yTilemapOffset++;
-			continue;
-		}
-
-		if (tilemap[i] == '#')
-		{
-			float x = SPRITE_SIZE * xTilemapOffset;
-			float y = SPRITE_SIZE * yTilemapOffset;
-			xTilemapOffset++;
-			RenderTextureClip(x - camera.x, y - camera.y, atlas, &tileClips[(int)TileType::BRICK_BASE]);
-		}
-	}
+	RenderTilemap(camera, atlas, tileClips);
 
 	// Mario
 	const Uint8* input = SDL_GetKeyboardState(nullptr);
@@ -146,7 +123,6 @@ void UpdateGame(GameState& state)
 
 	int w, h;
 	SDL_GetWindowSize(reinterpret_cast<SDL_Window*>(Window()), &w, &h);
-	// SDL_GetRendererOutputSize(reinterpret_cast<SDL_Renderer*>(Renderer()), &w, &h);
 
 	camera.x = mario.x - w / 2;
 	camera.y = mario.y - h / 2;
@@ -169,7 +145,7 @@ void UpdateGame(GameState& state)
 
 	if (isMoving)
 	{
-		RenderTextureClip(mario.x - camera.x, mario.y - camera.y, atlas, &marioRunningClip[(frame + 1) / 3]);
+		RenderTextureClip(mario.x - camera.x, mario.y - camera.y, atlas, &marioRunningClips[(frame + 1) / 3]);
 		++frame;
 
 		if (frame / 3 >= MAX_FRAME)
@@ -179,7 +155,7 @@ void UpdateGame(GameState& state)
 	}
 	else
 	{
-		RenderTextureClip(mario.x - camera.x, mario.y - camera.y, atlas, &marioRunningClip[0]);
+		RenderTextureClip(mario.x - camera.x, mario.y - camera.y, atlas, &marioRunningClips[0]);
 	}
 }
 
