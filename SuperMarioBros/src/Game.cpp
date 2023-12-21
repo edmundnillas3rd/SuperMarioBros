@@ -49,6 +49,7 @@ struct Mario
 	float y;
 };
 
+static const uint32_t SPEED = 200;
 static Mario mario;
 
 void StartGame(GameState& state)
@@ -143,7 +144,6 @@ void UpdateGame(GameState& state)
 	const Uint8* input = SDL_GetKeyboardState(nullptr);
 	static bool isMoving;
 
-
 	int w, h;
 	SDL_GetWindowSize(reinterpret_cast<SDL_Window*>(Window()), &w, &h);
 	// SDL_GetRendererOutputSize(reinterpret_cast<SDL_Renderer*>(Renderer()), &w, &h);
@@ -151,14 +151,15 @@ void UpdateGame(GameState& state)
 	camera.x = mario.x - w / 2;
 	camera.y = mario.y - h / 2;
 
+	double velocityX = SPEED * state.DeltaTime;
 	if (input[SDL_SCANCODE_A])
 	{
-		mario.x -= 1;
+		mario.x -= velocityX;
 		isMoving = true;
 	}
 	else if (input[SDL_SCANCODE_D])
 	{
-		mario.x += 1;
+		mario.x += velocityX;
 		isMoving = true;
 	}
 	else

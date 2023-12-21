@@ -8,7 +8,7 @@
 struct GameState
 {
 	GameState()
-		: Instance(nullptr)
+		: Instance(nullptr), DeltaTime(0.0)
 	{
 	}
 	~GameState() = default;
@@ -19,6 +19,7 @@ struct GameState
 	uint32_t Height;
 
 	std::unordered_map<std::string, Texture> sprites;
+	double DeltaTime;
 };
 
 void StartGame(GameState& state);

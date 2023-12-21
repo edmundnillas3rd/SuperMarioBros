@@ -35,10 +35,19 @@ void Run()
 
 	StartGame(state);
 
+	float currentTime = 0.0f;
+
+	Uint64 now = SDL_GetPerformanceCounter();
+	Uint64 last = 0;
+
 	while (running)
 	{
+		last = now;
+		now = SDL_GetPerformanceCounter();
+
 		while (SDL_PollEvent(&event))
 		{
+
 			switch (event.type)
 			{
 			case SDL_QUIT:
@@ -70,6 +79,7 @@ void Run()
 		SDL_SetRenderDrawColor(app.Renderer, 0x22, 0x44, 0x43, 0xFF);
 		UpdateGame(state);
 		SDL_RenderPresent(app.Renderer);
+		state.DeltaTime = (now - last) / (double)SDL_GetPerformanceFrequency();
 	}
 
 	ShutdownGame(state);

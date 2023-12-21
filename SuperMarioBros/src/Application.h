@@ -5,7 +5,9 @@
 
 struct Application
 {
-	Application() : Zoom(2.0f) {}
+	Application() : Zoom(2.0f)
+	{
+	}
 	SDL_Window* Window;
 	SDL_Renderer* Renderer;
 
