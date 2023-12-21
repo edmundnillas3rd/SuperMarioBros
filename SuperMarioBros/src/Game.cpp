@@ -182,6 +182,10 @@ void UpdateGame(GameState& state)
 	}
 }
 
-void ShutdownGame()
+void ShutdownGame(GameState& state)
 {
+	for (auto& [key, val] : state.Instance->sprites)
+	{
+		SDL_DestroyTexture(val.data);
+	}
 }

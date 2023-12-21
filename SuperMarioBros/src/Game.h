@@ -23,4 +23,4 @@ struct GameState
 
 void StartGame(GameState& state);
 void UpdateGame(GameState& state);
-void ShutdownGame();
+void ShutdownGame(GameState& state);

@@ -12,7 +12,7 @@ void Run()
 		std::cout << "Failed to initialized SDL\n";
 	}
 
-	int imgInitFlags = IMG_INIT_JPG | IMG_INIT_JPG;
+	int imgInitFlags = IMG_INIT_JPG | IMG_INIT_PNG;
 	if (IMG_Init(imgInitFlags) == 0)
 	{
 		std::cout << "Failed to initialized image library\n";
@@ -72,7 +72,7 @@ void Run()
 		SDL_RenderPresent(app.Renderer);
 	}
 
-	ShutdownGame();
+	ShutdownGame(state);
 
 	SDL_DestroyRenderer(app.Renderer);
 	SDL_DestroyWindow(app.Window);
