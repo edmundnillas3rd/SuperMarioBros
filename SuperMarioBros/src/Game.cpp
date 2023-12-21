@@ -25,12 +25,6 @@ static SDL_Rect camera;
 // Tile
 static std::vector<SDL_Rect> tileClips;
 
-static std::fstream tilemapData;
-static std::string tilemap;
-
-static uint32_t xTilemapOffset = 0;
-static uint32_t yTilemapOffset = 0;
-
 struct Mario
 {
 	float x;
@@ -110,9 +104,6 @@ void StartGame(GameState& state)
 void UpdateGame(GameState& state)
 {
 	Texture atlas = state.Instance->sprites["supermario_atlas"];
-
-	xTilemapOffset = 0;
-	yTilemapOffset = 0;
 
 	// Level
 	RenderTilemap(camera, atlas, tileClips);

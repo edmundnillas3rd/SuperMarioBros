@@ -42,9 +42,7 @@ void LoadTilemap(const std::string& name, const std::string& path, Tile tile, co
 				xTilemapOffset = 0;
 				continue;
 			}
-
-			// Adding a callback function here
-			// so that it can modify based on tilemap files
+s
 			if (fn(tilemapLine[i]) != -1)
 			{
 				xTilemapOffset++;
@@ -53,6 +51,7 @@ void LoadTilemap(const std::string& name, const std::string& path, Tile tile, co
 				t.y = tile.Height * yTilemapOffset;
 				t.Width = tile.Width;
 				t.Height = tile.Height;
+				t.Type = fn(tilemapLine[i]);
 				tiles.emplace_back(t);
 			}
 		}
