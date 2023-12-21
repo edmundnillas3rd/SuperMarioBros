@@ -42,7 +42,7 @@ void LoadTilemap(const std::string& name, const std::string& path, Tile tile, co
 				xTilemapOffset = 0;
 				continue;
 			}
-s
+
 			if (fn(tilemapLine[i]) != -1)
 			{
 				xTilemapOffset++;
