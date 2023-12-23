@@ -9,6 +9,7 @@
 #include "Application.h"
 #include "Texture.h"
 #include "Tilemap.h"
+#include "AABB.h"
 
 enum class TileType
 {
@@ -16,11 +17,14 @@ enum class TileType
 	BRICK_BASE			=  0,
 	BRICK_SOLID_SHINE	=  1,
 	BRICK_SOLID			=  2,
-	BRICK_HARD_SOLID	=  3
+	BRICK_HARD_SOLID	=  3,
+	FLAG_POLE_HEAD		=  4,
+	FLAG_POLE_BODY		=  5
 };
 
 static const uint32_t SPRITE_SIZE = 16;
-static SDL_Rect camera;
+static uint32_t RESIZE_SPRITE_SIZE;
+static SDL_FRect camera;
 
 // Tile
 static std::vector<SDL_Rect> tileClips;
@@ -31,7 +35,10 @@ struct Mario
 	float y;
 };
 
+static bool onGround = true;
 static const uint32_t SPEED = 200;
+static float velocityX = 0.0f;
+static float velocityY = 0.0f;
 static Mario mario;
 
 static std::vector<SDL_Rect> marioRunningClips;
@@ -49,12 +56,12 @@ void StartGame(GameState& state)
 	state.Instance->sprites["supermario_atlas"] = LoadTexture("assets/images/SuperMarioBrosAtlas.png");
 
 	// Tiles
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 6; i++)
 	{
-		const int TILE_SPRITE_OFFSET = (i + 14);
+		const int TILE_SPRITE_OFFSET = (i);
 		SDL_Rect tileClip = { 0 };
 		tileClip.x = SPRITE_SIZE * TILE_SPRITE_OFFSET;
-		tileClip.y = 0;
+		tileClip.y = SPRITE_SIZE;
 		tileClip.w = SPRITE_SIZE;
 		tileClip.h = SPRITE_SIZE;
 		tileClips.push_back(tileClip);
@@ -72,16 +79,17 @@ void StartGame(GameState& state)
 		marioRunningClips.push_back(marioClip);
 	}
 	
-	// Mario should be placed right above the level
-	// mario.y = 382 - SPRITE_SIZE;
-	mario.y = 750 - SPRITE_SIZE;
-
 	int w, h;
 	SDL_GetWindowSize(reinterpret_cast<SDL_Window*>(Window()), &w, &h);
-	camera = { 0, 0, w, h };
+	camera = { 0, 0, (float)w, (float)h };
 
 	// Should resize the sprite after loading the clip textures
-	uint32_t RESIZE_SPRITE_SIZE = 16 * GetApplicationProps().Zoom;
+	RESIZE_SPRITE_SIZE = 16 * GetApplicationProps().Zoom;
+
+	// Mario should be placed right above the level
+	// mario.y = 382 - SPRITE_SIZE;
+	mario.x = RESIZE_SPRITE_SIZE;
+	mario.y = 765 - RESIZE_SPRITE_SIZE;
 
 	Tile tileProps = {
 		0, 0, RESIZE_SPRITE_SIZE, RESIZE_SPRITE_SIZE
@@ -94,6 +102,15 @@ void StartGame(GameState& state)
 		{
 		case '#':
 			type = TileType::BRICK_BASE;
+			break;
+		case 's':
+			type = TileType::BRICK_HARD_SOLID;
+			break;
+		case 'o':
+			type = TileType::FLAG_POLE_HEAD;
+			break;
+		case '|':
+			type = TileType::FLAG_POLE_BODY;
 			break;
 		}
 
@@ -118,7 +135,21 @@ void UpdateGame(GameState& state)
 	camera.x = mario.x - w / 2;
 	camera.y = mario.y - h / 2;
 
-	double velocityX = SPEED * state.DeltaTime;
+	const float GRAVITY = 50.0f;
+	velocityX = SPEED * state.DeltaTime;
+	velocityY += GRAVITY * state.DeltaTime;
+
+	if (onGround && input[SDL_SCANCODE_SPACE])
+	{
+		onGround = false;
+		velocityY = -12.0;
+	}
+
+	if (!onGround)
+	{
+		mario.y += velocityY;
+	}
+
 	if (input[SDL_SCANCODE_A])
 	{
 		mario.x -= velocityX;
@@ -148,6 +179,33 @@ void UpdateGame(GameState& state)
 	{
 		RenderTextureClip(mario.x - camera.x, mario.y - camera.y, atlas, &marioRunningClips[0]);
 	}
+
+	// SDL_FRect marioColliderRender = { mario.x - camera.x, mario.y - camera.y, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE };
+	// auto* renderer = reinterpret_cast<SDL_Renderer*>(Renderer());
+	// SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
+	// SDL_RenderDrawRectF(renderer, &marioColliderRender);
+
+	SDL_FRect marioCollider = { mario.x, mario.y, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE };
+
+
+	CheckTilemapCollision(marioCollider, [](Tile tile) {
+
+		switch ((TileType)tile.Type)
+		{
+		case TileType::BRICK_BASE:
+			if (mario.y + RESIZE_SPRITE_SIZE > tile.y)
+			{
+				onGround = true;
+				velocityY = 0.0f;
+				mario.y -= velocityY;
+			}
+			else
+			{
+				onGround = false;
+			}
+			break;
+		}
+	});
 }
 
 void ShutdownGame(GameState& state)

@@ -75,8 +75,8 @@ void Run()
 
 		if (!running) break;
 
-		SDL_RenderClear(app.Renderer);
 		SDL_SetRenderDrawColor(app.Renderer, 0x22, 0x44, 0x43, 0xFF);
+		SDL_RenderClear(app.Renderer);
 		UpdateGame(state);
 		SDL_RenderPresent(app.Renderer);
 		state.DeltaTime = (now - last) / (double)SDL_GetPerformanceFrequency();
