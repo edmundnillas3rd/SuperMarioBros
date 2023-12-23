@@ -11,10 +11,10 @@
 
 struct Tile
 {
-	uint32_t x;
-	uint32_t y;
-	uint32_t Width;
-	uint32_t Height;
+	float x;
+	float y;
+	float Width;
+	float Height;
 	int Type;
 };
 

@@ -92,7 +92,7 @@ void StartGame(GameState& state)
 	mario.y = 765 - RESIZE_SPRITE_SIZE;
 
 	Tile tileProps = {
-		0, 0, RESIZE_SPRITE_SIZE, RESIZE_SPRITE_SIZE
+		0, 0, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE
 	};
 
 	LoadTilemap("Level-1-1", "assets/maps/level-1-1.txt", tileProps, [](char tile) -> int {
@@ -121,6 +121,27 @@ void StartGame(GameState& state)
 void UpdateGame(GameState& state)
 {
 	Texture atlas = state.Instance->sprites["supermario_atlas"];
+
+	SDL_FRect marioCollider = { mario.x, mario.y, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE };
+
+	CheckTilemapCollision(marioCollider, [](Tile tile) {
+
+		switch ((TileType)tile.Type)
+		{
+		case TileType::BRICK_BASE:
+			if (mario.y + RESIZE_SPRITE_SIZE > tile.y)
+			{
+				onGround = true;
+				velocityY = 0.0f;
+				mario.y -= velocityY;
+			}
+			else
+			{
+				onGround = false;
+			}
+			break;
+		}
+		});
 
 	// Level
 	RenderTilemap(camera, atlas, tileClips);
@@ -179,33 +200,6 @@ void UpdateGame(GameState& state)
 	{
 		RenderTextureClip(mario.x - camera.x, mario.y - camera.y, atlas, &marioRunningClips[0]);
 	}
-
-	// SDL_FRect marioColliderRender = { mario.x - camera.x, mario.y - camera.y, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE };
-	// auto* renderer = reinterpret_cast<SDL_Renderer*>(Renderer());
-	// SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
-	// SDL_RenderDrawRectF(renderer, &marioColliderRender);
-
-	SDL_FRect marioCollider = { mario.x, mario.y, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE };
-
-
-	CheckTilemapCollision(marioCollider, [](Tile tile) {
-
-		switch ((TileType)tile.Type)
-		{
-		case TileType::BRICK_BASE:
-			if (mario.y + RESIZE_SPRITE_SIZE > tile.y)
-			{
-				onGround = true;
-				velocityY = 0.0f;
-				mario.y -= velocityY;
-			}
-			else
-			{
-				onGround = false;
-			}
-			break;
-		}
-	});
 }
 
 void ShutdownGame(GameState& state)
