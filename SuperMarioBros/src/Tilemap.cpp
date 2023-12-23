@@ -5,10 +5,11 @@
 #include <vector>
 #include <fstream>
 
+#include "AABB.h"
+#include "Application.h"
 
-static std::unordered_map<std::string, std::string> tilemap;
-
-static std::vector<Tile> tiles;
+static std::unordered_map<std::string, std::vector<Tile>> tilemap;
+static std::string currentTilemap;
 
 static uint32_t xTilemapOffset = 0;
 static uint32_t yTilemapOffset = 0;
@@ -20,6 +21,8 @@ void LoadTilemap(const std::string& name, const std::string& path, Tile tile, co
 		std::cout << "Key already exist \n";
 		return;
 	}
+
+	currentTilemap = name;
 
 	std::ifstream file;
 
@@ -52,7 +55,7 @@ void LoadTilemap(const std::string& name, const std::string& path, Tile tile, co
 				t.Width = tile.Width;
 				t.Height = tile.Height;
 				t.Type = fn(tilemapLine[i]);
-				tiles.emplace_back(t);
+				tilemap[name].emplace_back(t);
 			}
 		}
 
@@ -64,9 +67,9 @@ void LoadTilemap(const std::string& name, const std::string& path, Tile tile, co
 	yTilemapOffset = 0;
 }
 
-void RenderTilemap(SDL_Rect camera, Texture texture, std::vector<SDL_Rect>& tileset)
+void RenderTilemap(SDL_FRect camera, Texture texture, std::vector<SDL_Rect>& tileset)
 {
-	for (const auto& tile : tiles)
+	for (const auto& tile : tilemap[currentTilemap])
 	{
 		RenderTextureClip(tile.x - camera.x, tile.y - camera.y, texture, &tileset[tile.Type]);
 	}
@@ -77,7 +80,7 @@ void SetTilemap(const std::string& name)
 	if (tilemap.find(name) != tilemap.end())
 	{
 		std::cout << "Key exist \n";
-
+		currentTilemap = name;
 	}
 	else
 	{
@@ -86,3 +89,21 @@ void SetTilemap(const std::string& name)
 	}
 }
 
+
+void CheckTilemapCollision(const SDL_FRect col, const TilemapCollisionCallback& fn)
+{
+	for (const auto& tile : tilemap[currentTilemap])
+	{
+		SDL_FRect tileCollider = {
+			tile.x,
+			tile.y,
+			tile.Width,
+			tile.Height
+		};
+
+		if (CheckCollision(col, tileCollider))
+		{
+			fn(tile);
+		}
+	}
+}
