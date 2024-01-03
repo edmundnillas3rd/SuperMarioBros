@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <cmath>
 
 #include "Application.h"
 #include "Texture.h"
@@ -29,13 +30,27 @@ static SDL_FRect camera;
 // Tile
 static std::vector<SDL_Rect> tileClips;
 
+enum class Direction 
+{
+	NONE,
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT
+};
+
 struct Mario
 {
 	float x;
 	float y;
+	Direction direction;
 };
 
-static bool onGround = true;
+static bool levelFinished = false;
+static float floorCoordY = 0.0f;
+
+static bool onGround = false;
+static bool isMoving = false;
 static const uint32_t SPEED = 200;
 static float velocityX = 0.0f;
 static float velocityY = 0.0f;
@@ -88,8 +103,11 @@ void StartGame(GameState& state)
 
 	// Mario should be placed right above the level
 	// mario.y = 382 - SPRITE_SIZE;
+	floorCoordY = 765 - RESIZE_SPRITE_SIZE * 2;
 	mario.x = RESIZE_SPRITE_SIZE;
-	mario.y = 765 - RESIZE_SPRITE_SIZE;
+	mario.y = floorCoordY;
+	mario.direction = Direction::NONE;
+	
 
 	Tile tileProps = {
 		0, 0, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE
@@ -120,35 +138,53 @@ void StartGame(GameState& state)
 
 void UpdateGame(GameState& state)
 {
-	Texture atlas = state.Instance->sprites["supermario_atlas"];
-
 	SDL_FRect marioCollider = { mario.x, mario.y, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE };
 
-	CheckTilemapCollision(marioCollider, [](Tile tile) {
-
-		switch ((TileType)tile.Type)
-		{
-		case TileType::BRICK_BASE:
-			if (mario.y + RESIZE_SPRITE_SIZE > tile.y)
+	if (!levelFinished)
+	{
+		CheckTilemapCollision(marioCollider, [&state](Tile tile) {
+			switch ((TileType)tile.Type)
 			{
+
+			case TileType::FLAG_POLE_BODY:
+			case TileType::FLAG_POLE_HEAD:
+				levelFinished = true;
 				onGround = true;
-				velocityY = 0.0f;
-				mario.y -= velocityY;
-			}
-			else
-			{
-				onGround = false;
-			}
-			break;
-		}
-		});
+				mario.y = tile.y;
 
-	// Level
-	RenderTilemap(camera, atlas, tileClips);
+				break;
+
+			case TileType::BRICK_BASE:
+
+				// Direction currentDirection = mario.direction;
+				// if (currentDirection == Direction::LEFT || currentDirection == Direction::RIGHT)
+				// {
+				// 	mario.x -= velocityX;
+				// }
+
+				if (mario.y + RESIZE_SPRITE_SIZE > tile.y)
+				{
+					onGround = true;
+					velocityY = 0.0f;
+					mario.y += velocityY * state.DeltaTime;
+				}
+				else
+				{
+					onGround = false;
+				}
+				break;
+			}
+		});
+	}
+	else
+	{
+		std::cout << state.DeltaTime << "\n";
+	 	mario.y = std::lerp(mario.y, floorCoordY, 0.025f);
+	 	return;
+	}
 
 	// Mario
 	const Uint8* input = SDL_GetKeyboardState(nullptr);
-	static bool isMoving;
 
 	int w, h;
 	SDL_GetWindowSize(reinterpret_cast<SDL_Window*>(Window()), &w, &h);
@@ -156,35 +192,48 @@ void UpdateGame(GameState& state)
 	camera.x = mario.x - w / 2;
 	camera.y = mario.y - h / 2;
 
-	const float GRAVITY = 50.0f;
+	// const float GRAVITY = 9.8f;
+	// const float MASS = 10.0f;
+	// const float FORCE = onGround ? 150.0f : GRAVITY;
+	// const float ACCELERATION = (FORCE / MASS);
 	velocityX = SPEED * state.DeltaTime;
-	velocityY += GRAVITY * state.DeltaTime;
 
 	if (onGround && input[SDL_SCANCODE_SPACE])
 	{
 		onGround = false;
-		velocityY = -12.0;
+		velocityY = -500.0f;
 	}
 
 	if (!onGround)
 	{
-		mario.y += velocityY;
+		const float GRAVITY = 950.0f;
+		velocityY += GRAVITY * state.DeltaTime;
+		mario.y += velocityY * state.DeltaTime;
 	}
 
 	if (input[SDL_SCANCODE_A])
 	{
 		mario.x -= velocityX;
 		isMoving = true;
+		mario.direction = Direction::LEFT;
 	}
 	else if (input[SDL_SCANCODE_D])
 	{
 		mario.x += velocityX;
 		isMoving = true;
+		mario.direction = Direction::RIGHT;
 	}
 	else
 	{
 		isMoving = false;
+		mario.direction = Direction::NONE;
 	}
+}
+
+void RenderGame(GameState& state)
+{
+	Texture atlas = state.Instance->sprites["supermario_atlas"];
+	RenderTilemap(camera, atlas, tileClips);
 
 	if (isMoving)
 	{

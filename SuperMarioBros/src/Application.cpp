@@ -66,18 +66,18 @@ void Run()
 					break;
 				}
 #endif
-				// std::cout << app.Zoom << "\n";
-				// SDL_RenderSetScale(app.Renderer, app.Zoom, app.Zoom);
 				break;
 			}
 
 		}
 
+		UpdateGame(state);
+
 		if (!running) break;
 
 		SDL_SetRenderDrawColor(app.Renderer, 0x22, 0x44, 0x43, 0xFF);
 		SDL_RenderClear(app.Renderer);
-		UpdateGame(state);
+		RenderGame(state);
 		SDL_RenderPresent(app.Renderer);
 		state.DeltaTime = (now - last) / (double)SDL_GetPerformanceFrequency();
 	}

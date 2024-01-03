@@ -57,5 +57,13 @@ void RenderTextureClip(float x, float y, Texture texture, SDL_Rect* clip)
 		renderQuad.w = clip->w * zoom;
 		renderQuad.h = clip->h * zoom;
 	}
-	SDL_RenderCopyF(reinterpret_cast<SDL_Renderer*>(Renderer()), texture.data, clip, &renderQuad);
+
+	auto* renderer = reinterpret_cast<SDL_Renderer*>(Renderer());
+
+#ifdef _DEBUG
+	SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
+	SDL_RenderDrawRectF(renderer, &renderQuad);
+#endif
+
+	SDL_RenderCopyF(renderer, texture.data, clip, &renderQuad);
 }
