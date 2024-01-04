@@ -11,6 +11,7 @@
 #include "Texture.h"
 #include "Tilemap.h"
 #include "AABB.h"
+#include "Pathfinding.h"
 
 enum class TileType
 {
@@ -140,57 +141,67 @@ void UpdateGame(GameState& state)
 {
 	SDL_FRect marioCollider = { mario.x, mario.y, (float)RESIZE_SPRITE_SIZE, (float)RESIZE_SPRITE_SIZE };
 
-	if (!levelFinished)
-	{
-		CheckTilemapCollision(marioCollider, [&state](Tile tile) {
-			switch ((TileType)tile.Type)
-			{
-
-			case TileType::FLAG_POLE_BODY:
-			case TileType::FLAG_POLE_HEAD:
-				levelFinished = true;
-				onGround = true;
-				mario.y = tile.y;
-
-				break;
-
-			case TileType::BRICK_BASE:
-
-				// Direction currentDirection = mario.direction;
-				// if (currentDirection == Direction::LEFT || currentDirection == Direction::RIGHT)
-				// {
-				// 	mario.x -= velocityX;
-				// }
-
-				if (mario.y + RESIZE_SPRITE_SIZE > tile.y)
-				{
-					onGround = true;
-					velocityY = 0.0f;
-					mario.y += velocityY * state.DeltaTime;
-				}
-				else
-				{
-					onGround = false;
-				}
-				break;
-			}
-		});
-	}
-	else
-	{
-		std::cout << state.DeltaTime << "\n";
-	 	mario.y = std::lerp(mario.y, floorCoordY, 0.025f);
-	 	return;
-	}
-
-	// Mario
-	const Uint8* input = SDL_GetKeyboardState(nullptr);
-
 	int w, h;
 	SDL_GetWindowSize(reinterpret_cast<SDL_Window*>(Window()), &w, &h);
 
 	camera.x = mario.x - w / 2;
 	camera.y = mario.y - h / 2;
+
+	if (levelFinished)
+	{
+		if (mario.x + 1.0f >= 1000.0f)
+		{
+			isMoving = false;
+			return;
+		}
+
+		if (mario.y + 1.0f >= floorCoordY)
+		{
+			const float SPEED_MODIFIER = 200.0f;
+			mario.x = MoveTowards(mario.x, 1000.0f, state.DeltaTime * SPEED_MODIFIER);
+			return;
+		}
+
+		mario.y = MoveTowards(mario.y + 2.0f, floorCoordY, state.DeltaTime * 20.0f);
+		return;
+	}
+
+	CheckTilemapCollision(marioCollider, [&state](Tile tile) {
+		switch ((TileType)tile.Type)
+		{
+
+		case TileType::FLAG_POLE_BODY:
+		case TileType::FLAG_POLE_HEAD:
+			levelFinished = true;
+			onGround = true;
+			mario.y = tile.y;
+
+			break;
+
+		case TileType::BRICK_BASE:
+
+			// Direction currentDirection = mario.direction;
+			// if (currentDirection == Direction::LEFT || currentDirection == Direction::RIGHT)
+			// {
+			// 	mario.x -= velocityX;
+			// }
+
+			if (mario.y + RESIZE_SPRITE_SIZE > tile.y)
+			{
+				onGround = true;
+				velocityY = 0.0f;
+				mario.y += velocityY * state.DeltaTime;
+			}
+			else
+			{
+				onGround = false;
+			}
+			break;
+		}
+	});
+
+	// Mario
+	const Uint8* input = SDL_GetKeyboardState(nullptr);
 
 	// const float GRAVITY = 9.8f;
 	// const float MASS = 10.0f;
